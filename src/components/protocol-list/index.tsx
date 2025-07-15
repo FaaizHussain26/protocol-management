@@ -8,19 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Protocol } from "@/services/api/protocol.service";
 import { CheckCircle, Clock, AlertTriangle, Eye, Bot } from "lucide-react";
 
-interface Protocol {
-  id: number;
-  pi: string;
-  indication: string;
-  enrollmentStartDate: string;
-  isUpdated: boolean;
-  protocolId: string;
-  uploadDate: string;
-  status: "uploaded" | "verification-pending" | "verified" | "duplicate";
-  agentVerified: boolean;
-}
 
 interface ProtocolsListProps {
   protocols: Protocol[];

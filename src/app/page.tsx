@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { LoginForm } from "@/components/login-form";
+import { useState, useEffect } from "react";
 import { ProtocolUpload } from "@/components/protocol-upload";
 import { ProtocolsList } from "@/components/protocol-list";
 import {
@@ -13,55 +12,65 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, List, CheckCircle, LogOut } from "lucide-react";
+import {
+  FileText,
+  Upload,
+  List,
+  CheckCircle,
+  LogOut,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/services/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import { useProtocols } from "@/services/hooks/useProtocol";
+import { Protocol } from "@/services/api/protocol.service";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [protocols, setProtocols] = useState<any[]>([]);
+  const { user, isLoadingUser, isAuthenticated, logout, isLoggingOut } =
+    useAuth();
+  // Remove the useState for protocols
+  // const [protocols, setProtocols] = useState<any[]>([])
+
+  // Add the useProtocols hook
+  const { protocols, createProtocol, isCreatingProtocol } = useProtocols();
   const [activeTab, setActiveTab] = useState("upload");
+  const router = useRouter();
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
+  useEffect(() => {
+    if (!isLoadingUser && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoadingUser, isAuthenticated, router]);
+
+  // Replace handleProtocolUpload function
+  const handleProtocolUpload = (protocolData: any) => {
+    createProtocol(protocolData, {
+      onSuccess: () => {
+        setActiveTab("list");
+      },
+    });
   };
 
-  const handleProtocolUpload = (protocol: any) => {
-    const newProtocol = {
-      ...protocol,
-      id: Date.now(),
-      uploadDate: new Date().toISOString(),
-      status: protocol.protocolId ? "verification-pending" : "uploaded",
-      agentVerified: false,
-    };
-    setProtocols((prev) => [...prev, newProtocol]);
-    setActiveTab("list");
-  };
-
+  // Remove the setProtocols([]) line from handleLogout function
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setProtocols([]);
     setActiveTab("upload");
+    logout();
   };
 
-  if (!isLoggedIn) {
+  if (isLoadingUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-              <FileText className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Protocol Manager
-            </h1>
-            <p className="text-gray-600">
-              Secure protocol upload and management system
-            </p>
-          </div>
-          <LoginForm onLogin={handleLogin} />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
   }
 
   return (
@@ -76,6 +85,9 @@ export default function Home() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-600">
+                Welcome, <span className="font-medium">{user?.name}</span>
+              </div>
               <Badge
                 variant="outline"
                 className="bg-green-50 text-green-700 border-green-200"
@@ -87,9 +99,14 @@ export default function Home() {
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
+                disabled={isLoggingOut}
                 className="flex items-center gap-2 bg-transparent"
               >
-                <LogOut className="w-4 h-4" />
+                {isLoggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
                 Logout
               </Button>
             </div>
@@ -148,7 +165,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ProtocolsList protocols={protocols} />
+                <ProtocolsList protocols={protocols as Protocol[]} />
               </CardContent>
             </Card>
           </TabsContent>

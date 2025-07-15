@@ -1,8 +1,5 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,29 +11,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, LogIn } from "lucide-react";
+import { Loader2, LogIn, AlertCircle } from "lucide-react";
+import { useLogin } from "@/services/hooks/useLogin";
 
-interface LoginFormProps {
-  onLogin: () => void;
-}
+export function LoginForm() {
+  const { form, onSubmit, isLoading, error } = useLogin();
 
-export function LoginForm({ onLogin }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 1500);
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = form;
 
   return (
     <Card className="w-full">
@@ -47,43 +32,46 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <Input
               id="username"
               type="text"
               placeholder="Enter your username"
-              value={credentials.username}
-              onChange={(e) =>
-                setCredentials((prev) => ({
-                  ...prev,
-                  username: e.target.value,
-                }))
-              }
-              required
+              {...register("username")}
+              className={errors.username ? "border-red-500" : ""}
             />
+            {errors.username && (
+              <p className="text-sm text-red-500">{errors.username.message}</p>
+            )}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               placeholder="Enter your password"
-              value={credentials.password}
-              onChange={(e) =>
-                setCredentials((prev) => ({
-                  ...prev,
-                  password: e.target.value,
-                }))
-              }
-              required
+              {...register("password")}
+              className={errors.password ? "border-red-500" : ""}
             />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password.message}</p>
+            )}
           </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <Alert className="bg-blue-50 border-blue-200">
             <AlertDescription className="text-blue-800">
-              Demo: Use any username and password to login
+              Demo: Use any username (min 3 chars) and password (min 6 chars) to
+              login
             </AlertDescription>
           </Alert>
 
